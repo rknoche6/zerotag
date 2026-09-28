@@ -1,0 +1,22 @@
+{
+  "name": "zerotag",
+  "version": "0.1.0",
+  "description": "One script tag. Autocaptures and auto-labels clicks, scrolls, forms and navigation. No custom events.",
+  "type": "module",
+  "license": "MIT",
+  "repository": "github:rknoche6/zerotag",
+  "main": "dist/zerotag.js",
+  "files": ["dist", "src"],
+  "scripts": {
+    "build": "node scripts/build.mjs",
+    "test": "node --test test/*.test.js"
+  },
+  "dependencies": {
+    "@vercel/functions": "^2.0.0"
+  },
+  "devDependencies": {
+    "esbuild": "^0.24.0",
+    "jsdom": "^25.0.0"
+  },
+  "engines": { "node": ">=18" }
+}

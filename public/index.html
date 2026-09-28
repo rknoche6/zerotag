@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>zerotag collector</title>
+<style>
+  :root { --bg:#0b0c0e; --fg:#e8e8ea; --dim:#8a8d94; --line:#23252b; --acc:#c6f36b; }
+  * { box-sizing: border-box; }
+  body { margin:0; font:15px/1.55 ui-sans-serif, system-ui, -apple-system, sans-serif; background:var(--bg); color:var(--fg); }
+  main { max-width: 960px; margin: 0 auto; padding: 48px 20px; display:grid; gap:32px; grid-template-columns: 1fr 1fr; }
+  @media (max-width: 760px) { main { grid-template-columns: 1fr; } }
+  h1 { margin:0 0 8px; font-size:28px; letter-spacing:-.02em; }
+  p { color: var(--dim); margin: 0 0 16px; }
+  code, pre { font: 13px/1.5 ui-monospace, SFMono-Regular, Menlo, monospace; }
+  pre { background:#121317; border:1px solid var(--line); border-radius:8px; padding:14px; overflow:auto; }
+  section { border:1px solid var(--line); border-radius:10px; padding:18px; margin-bottom:16px; }
+  h2 { font-size:15px; margin:0 0 12px; }
+  button, input, select { font:inherit; color:inherit; background:#17181c; border:1px solid var(--line); border-radius:6px; padding:8px 12px; }
+  button { cursor:pointer; } button:hover { border-color: var(--acc); }
+  .row { display:flex; gap:8px; flex-wrap:wrap; }
+  #log { height: 560px; overflow:auto; position: sticky; top: 20px; }
+  #log div { padding:6px 0; border-bottom:1px solid var(--line); }
+  #log b { color: var(--acc); font-weight: 500; }
+  #log small { color: var(--dim); display:block; }
+  a { color: var(--acc); }
+</style>
+</head>
+<body>
+<main>
+  <div>
+    <h1>zerotag collector</h1>
+    <p>This deployment serves the script at <code>/zt.js</code> and receives events at <code>/api/collect</code>. Install on any site:</p>
+    <pre id="snippet">&lt;script defer src="https://YOUR-DEPLOYMENT/zt.js" data-site="example.com"&gt;&lt;/script&gt;</pre>
+    <p>Try the controls below. Every interaction shows up on the right with the label zerotag picked for it. Nothing on this page has tracking code attached.</p>
+
+    <section id="pricing"><h2>Pricing</h2>
+      <div class="row"><button>Start free trial</button><button aria-label="Close banner">&#x2715;</button><a href="https://github.com/rknoche6/zerotag">View source</a></div>
+    </section>
+
+    <section><h2>Newsletter signup</h2>
+      <form onsubmit="event.preventDefault()" class="row">
+        <label>Work email <input type="email" placeholder="you@company.com"></label>
+        <select aria-label="Team size"><option>1-10</option><option>11-50</option><option>50+</option></select>
+        <button type="submit">Subscribe</button>
+      </form>
+    </section>
+
+    <section><h2>Broken button</h2>
+      <p>Click this one three times fast. It does nothing, so it counts as a dead click and a rage click.</p>
+      <button>Apply coupon</button>
+    </section>
+
+    <section data-zt-ignore><h2>Ignored area</h2>
+      <p>Anything inside <code>data-zt-ignore</code> is skipped.</p>
+      <button>Not tracked</button>
+    </section>
+    <div style="height:60vh"></div>
+    <p>Bottom of page. Scroll depth fires at 25, 50, 75, 90 and 100%.</p>
+  </div>
+  <div id="log"><h2>Live events</h2></div>
+</main>
+<script>
+  document.getElementById('snippet').textContent =
+    '<script defer src="' + location.origin + '/zt.js" data-site="example.com"><\/script>';
+  document.addEventListener('zerotag:event', function (e) {
+    var ev = e.detail, row = document.createElement('div');
+    var b = document.createElement('b'); b.textContent = ev.n;
+    var s = document.createElement('small'); s.textContent = ev.t + '  ' + JSON.stringify(ev.p);
+    row.append(b, s);
+    var log = document.getElementById('log');
+    log.insertBefore(row, log.children[1]);
+  });
+</script>
+<script src="/zt.js" data-site="zerotag-demo"></script>
+</body>
+</html>
