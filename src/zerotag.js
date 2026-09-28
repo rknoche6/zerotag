@@ -338,7 +338,13 @@
   var recent = [];
   var mutated = false;
   if (w.MutationObserver) {
-    new MutationObserver(function () { mutated = true; }).observe(d.documentElement, { childList: true, subtree: true, attributes: true, characterData: true });
+    new MutationObserver(function (records) {
+      // Changes inside ignored regions (e.g. a debug panel) don't count as the page reacting.
+      for (var i = 0; i < records.length; i++) {
+        var n = records[i].target;
+        if (!ignored(n.nodeType === 1 ? n : n.parentElement)) { mutated = true; return; }
+      }
+    }).observe(d.documentElement, { childList: true, subtree: true, attributes: true, characterData: true });
   }
 
   d.addEventListener('click', function (e) {

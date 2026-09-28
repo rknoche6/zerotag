@@ -111,3 +111,19 @@ test('custom track + super props', async () => {
   assert.equal(e.n, 'Upgraded');
   assert.equal(JSON.stringify(e.p), JSON.stringify({ plan: 'pro', seats: 5 }));
 });
+
+test('dead click fires when only ignored regions change', async () => {
+  const { doc, events, window } = await setup('<button>Apply coupon</button><div data-zt-ignore id="log"></div>');
+  window.zerotag.on(() => { const d = doc.createElement('div'); doc.getElementById('log').appendChild(d); });
+  doc.querySelector('button').dispatchEvent(new window.MouseEvent('click', { bubbles: true }));
+  await new Promise((r) => setTimeout(r, 1100));
+  assert.equal(events.filter((e) => e.t === 'dead_click').length, 1);
+});
+
+test('no dead click when the page reacts', async () => {
+  const { doc, events, window } = await setup('<button>Save</button>');
+  doc.querySelector('button').addEventListener('click', (e) => { e.target.textContent = 'Done'; });
+  doc.querySelector('button').dispatchEvent(new window.MouseEvent('click', { bubbles: true }));
+  await new Promise((r) => setTimeout(r, 1100));
+  assert.equal(events.filter((e) => e.t === 'dead_click').length, 0);
+});
