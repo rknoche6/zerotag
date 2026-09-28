@@ -138,3 +138,20 @@ test('scroll depth is recorded without requestAnimationFrame', async () => {
   await new Promise((r) => setTimeout(r, 200));
   assert.deepEqual(events.filter((e) => e.t === 'scroll').map((e) => e.p.depth), [25, 50, 75, 90, 100]);
 });
+
+test('click on empty container space is not labeled with all its text', async () => {
+  const { doc, events, window } = await setup('<section><h2>Hero</h2><div id="box"><p>Long paragraph text here</p><p>More text</p></div></section>');
+  doc.getElementById('box').dispatchEvent(new window.MouseEvent('click', { bubbles: true }));
+  const c = events.find((e) => e.t === 'click');
+  assert.equal(c.p.label, 'div');
+  assert.equal(c.p.interactive, false);
+  assert.equal(c.p.section, 'Hero');
+});
+
+test('CSS uppercase does not change the label', async () => {
+  const { doc, events, window } = await setup('<nav><a href="#results" style="text-transform:uppercase">Results</a></nav>');
+  const a = doc.querySelector('a');
+  Object.defineProperty(a, 'innerText', { get: () => 'RESULTS' }); // what a browser returns
+  a.dispatchEvent(new window.MouseEvent('click', { bubbles: true }));
+  assert.equal(events.find((e) => e.t === 'click').p.label, 'Results');
+});

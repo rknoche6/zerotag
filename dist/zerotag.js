@@ -105,7 +105,16 @@
     if (!el) return '';
     if (masked(el)) return '[masked]';
     var t = el.innerText != null ? el.innerText : el.textContent;
+    // innerText applies CSS text-transform; keep the source casing so a style change doesn't rename the label.
+    var src = el.textContent || '';
+    if (t && src && clean(t).toLowerCase() === clean(src).toLowerCase()) t = src;
     return clean(t);
+  }
+  // Text that belongs to the element itself, not its children. Used for clicks on non-interactive containers.
+  function ownText(el) {
+    var t = '';
+    for (var c = el.firstChild; c; c = c.nextSibling) if (c.nodeType === 3) t += c.nodeValue;
+    return clean(t, 60);
   }
   function byId(ids) {
     return clean((ids || '').split(/\s+/).map(function (id) {
@@ -366,7 +375,11 @@
     var info = describe(el);
     if (!interactive) {
       var cs = w.getComputedStyle ? w.getComputedStyle(target) : null;
-      if (!(cs && cs.cursor === 'pointer')) { info.interactive = false; }
+      if (!(cs && cs.cursor === 'pointer')) {
+        info.interactive = false;
+        // Don't name a click on empty space after a whole container's text.
+        info.label = masked(target) ? '[masked]' : (ownText(target) || info.tag);
+      }
     }
     if (el.type === 'checkbox' || el.type === 'radio') info.checked = !!el.checked;
     info.x = Math.round(e.pageX); info.y = Math.round(e.pageY);
