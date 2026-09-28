@@ -8,6 +8,8 @@ One script tag. Every click, scroll, form and page change gets captured and name
 
 That's the whole install. About 6 KB gzipped, no dependencies.
 
+See it label your own clicks live at **[zerotag-site.vercel.app](https://zerotag-site.vercel.app/#demo)**. A hosted collector runs at `https://zerotag.vercel.app` for trying it out; for production, deploy your own (below).
+
 ## What a click looks like
 
 Given this markup:
