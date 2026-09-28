@@ -405,11 +405,11 @@
   }
   w.addEventListener('scroll', function () {
     lastActive = Date.now();
-    if (!scrollTick) { scrollTick = true; (w.requestAnimationFrame || setTimeout)(onScroll); }
+    if (!scrollTick) { scrollTick = true; setTimeout(onScroll, 150); }
   }, { passive: true });
 
   // ---------- section views ----------
-  var io = null, seen = {};
+  var io = null, seen = {}, sectionViews = 0;
   function observeSections() {
     if (!w.IntersectionObserver) return;
     if (io) io.disconnect();
@@ -421,14 +421,23 @@
         if (en.isIntersecting && en.intersectionRatio >= 0.4) {
           if (!timers.has(el)) timers.set(el, setTimeout(function () {
             var label = regionOf(el.firstElementChild || el) || regionOf(el);
-            if (label && !seen[label]) { seen[label] = 1; emit('section_view', { label: label, path: page.path }); }
+            if (label && !seen[label] && sectionViews < 20) { seen[label] = 1; sectionViews++; emit('section_view', { label: label, path: page.path }); }
             io && io.unobserve(el);
           }, 1000));
         } else if (timers.has(el)) { clearTimeout(timers.get(el)); timers.delete(el); }
       });
     }, { threshold: [0, 0.4] });
-    var nodes = d.querySelectorAll('section,article,[data-zt-section],main>div[id]');
-    for (var i = 0; i < nodes.length && i < 60; i++) if (!ignored(nodes[i])) io.observe(nodes[i]);
+    sectionViews = 0;
+    // Page-level sections only: skip small blocks like cards in a grid.
+    var nodes = d.querySelectorAll('section,[data-zt-section],main>div[id],article[id]');
+    var minH = w.innerHeight * 0.25, n = 0;
+    for (var i = 0; i < nodes.length && n < 40; i++) {
+      var el = nodes[i];
+      if (ignored(el)) continue;
+      if (!el.hasAttribute('data-zt-section') && el.offsetHeight < minH) continue;
+      if (el.parentElement && el.parentElement.closest('section,[data-zt-section]') && !el.id && !el.hasAttribute('data-zt-section')) continue;
+      io.observe(el); n++;
+    }
   }
 
   // ---------- forms (never values) ----------

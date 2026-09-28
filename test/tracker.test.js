@@ -127,3 +127,14 @@ test('no dead click when the page reacts', async () => {
   await new Promise((r) => setTimeout(r, 1100));
   assert.equal(events.filter((e) => e.t === 'dead_click').length, 0);
 });
+
+test('scroll depth is recorded without requestAnimationFrame', async () => {
+  const { window, doc, events } = await setup('<div style="height:5000px">tall</div>');
+  Object.defineProperty(doc.documentElement, 'scrollHeight', { value: 5000, configurable: true });
+  Object.defineProperty(window, 'innerHeight', { value: 1000, configurable: true });
+  window.requestAnimationFrame = () => {}; // paused, like a background tab
+  window.scrollY = 4000;
+  window.dispatchEvent(new window.Event('scroll'));
+  await new Promise((r) => setTimeout(r, 200));
+  assert.deepEqual(events.filter((e) => e.t === 'scroll').map((e) => e.p.depth), [25, 50, 75, 90, 100]);
+});
