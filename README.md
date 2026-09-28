@@ -8,7 +8,7 @@ One script tag. Every click, scroll, form and page change gets captured and name
 
 That's the whole install. About 6 KB gzipped, no dependencies.
 
-See it label your own clicks live at **[zerotag-site.vercel.app](https://zerotag-site.vercel.app/#demo)**. A hosted collector runs at `https://zerotag.vercel.app` for trying it out; for production, deploy your own (below).
+See it label your own clicks live at **[zerotag.p001.ai](https://zerotag.p001.ai/#demo)**. A hosted collector runs at `https://t.p001.ai` (script: `https://t.p001.ai/zt.js`). For production, deploy your own (below).
 
 ## What a click looks like
 
@@ -112,6 +112,20 @@ Other env vars:
 - `ZT_SALT`: secret salt for cookieless visitor hashes.
 - `ZT_ALLOWED_SITES`: comma list of `data-site` values to accept. Empty accepts all.
 - `ZT_STATS_KEY`: protects `/api/stats`.
+
+### Limits
+
+With Redis configured, the collector counts requests in fixed windows and answers `429` with `Retry-After` when a limit is hit. The script then pauses sending until that time passes.
+
+| Env var | Default | What it caps |
+| --- | --- | --- |
+| `ZT_LIMIT_IP_PER_MIN` | 120 | Batches per IP per minute (an IP is stored only as a salted hash) |
+| `ZT_LIMIT_SITE_PER_MIN` | 30,000 | Events per site per minute |
+| `ZT_LIMIT_SITE_PER_DAY` | 2,000,000 | Events per site per UTC day |
+| `ZT_LIMIT_GLOBAL_PER_DAY` | 20,000,000 | Events across all sites per UTC day |
+| `ZT_LIMIT_NEW_SITES_PER_DAY` | 500 | Distinct `data-site` values accepted per day |
+
+Requests are also capped at 64 KB and 100 events, and site keys must match `[a-z0-9._:-]{1,100}`. On Vercel, add a firewall rate-limit rule on `/api/` as well (the hosted collector uses 300 requests per IP per minute), so floods are dropped before the function runs.
 
 ### Stats
 

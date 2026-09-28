@@ -3,6 +3,7 @@
 import { waitUntil } from '@vercel/functions';
 import { sinks } from '../lib/sinks.js';
 import { parseUA, isBot } from '../lib/ua.js';
+import { checkLimits } from '../lib/limits.js';
 
 export const config = { runtime: 'edge' };
 
@@ -63,7 +64,7 @@ export default async function handler(req) {
   if (isBot(ua)) return new Response(null, { status: 204, headers });
 
   const site = str(body.c.site, 100)?.toLowerCase();
-  if (!site) return new Response('Missing site', { status: 400, headers });
+  if (!site || !/^[a-z0-9._:-]{1,100}$/.test(site)) return new Response('Bad site', { status: 400, headers });
   if (allowed.length && !allowed.includes(site)) return new Response('Site not allowed', { status: 403, headers });
 
   const ip = (req.headers.get('x-forwarded-for') || '').split(',')[0].trim();
@@ -99,6 +100,16 @@ export default async function handler(req) {
       props: sanitizeProps(e.p)
     }));
 
-  if (events.length) waitUntil(Promise.allSettled(sinks().map((s) => s.write(events))));
+  if (!events.length) return new Response(null, { status: 204, headers });
+
+  const limited = await checkLimits({ ipHash: await sha(`${process.env.ZT_SALT || 'zerotag'}|${ip}`), site, count: events.length });
+  if (limited) {
+    return new Response(JSON.stringify({ error: 'rate_limited', reason: limited.reason }), {
+      status: 429,
+      headers: { ...headers, 'Content-Type': 'application/json', 'Retry-After': String(limited.retryAfter) }
+    });
+  }
+
+  waitUntil(Promise.allSettled(sinks().map((s) => s.write(events))));
   return new Response(null, { status: 204, headers });
 }

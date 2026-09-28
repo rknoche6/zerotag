@@ -220,6 +220,7 @@
   var listeners = [];
   var superProps = {};
   var timer = null;
+  var pausedUntil = 0;
   var page = { url: '', path: '', title: '', start: 0 };
   var endpoint = cfg.endpoint;
 
@@ -275,6 +276,7 @@
   function flush(beacon) {
     clearTimeout(timer); timer = null;
     if (!queue.length) return;
+    if (Date.now() < pausedUntil) { queue = queue.slice(-200); return; }
     var events = queue.splice(0, 100);
     var body = JSON.stringify({ c: ctx(), r: d.referrer ? cleanUrl(d.referrer) : '', e: events });
     // text/plain keeps this a "simple" request: no CORS preflight.
@@ -283,6 +285,10 @@
     }
     try {
       fetch(endpoint, { method: 'POST', body: body, keepalive: body.length < 60000, headers: { 'Content-Type': 'text/plain' }, credentials: 'omit' })
+        .then(function (r) {
+          // Collector says slow down: stop sending until Retry-After passes.
+          if (r.status === 429) pausedUntil = Date.now() + (parseInt(r.headers.get('Retry-After'), 10) || 60) * 1000;
+        })
         .catch(function () {});
     } catch (e) {}
     if (queue.length) flush(beacon);
